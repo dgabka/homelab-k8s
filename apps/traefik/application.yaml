@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: traefik
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0" # after CRDs (-10), before apps using it
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/dgabka/homelab-k8s.git
+    targetRevision: HEAD
+    path: apps/traefik/manifests
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: traefik
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

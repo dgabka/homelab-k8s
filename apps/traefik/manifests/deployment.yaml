@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: traefik
+  namespace: traefik
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate # hostNetwork means only one pod per node anyway
+  selector:
+    matchLabels:
+      app: traefik
+  template:
+    metadata:
+      labels:
+        app: traefik
+    spec:
+      serviceAccountName: traefik
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      containers:
+        - name: traefik
+          image: traefik:v3.6.15
+          args:
+            - --providers.kubernetesgateway
+            - --providers.kubernetesgateway.experimentalchannel=false
+            - --entrypoints.web.address=:8800
+            - --entrypoints.websecure.address=:8443
+            - --entrypoints.traefik.address=:8082
+            - --log.level=INFO
+            - --accesslog=true
+            - --api.dashboard=true
+            - --api.insecure=true # only listens on localhost in pod, dashboard via port-forward
+            - --ping=true
+          ports:
+            - name: web
+              containerPort: 8800
+              hostPort: 8800
+            - name: websecure
+              containerPort: 8443
+              hostPort: 8443
+            - name: dashboard
+              containerPort: 8082
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: 8082
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: 8082
+            initialDelaySeconds: 10
+            periodSeconds: 5
