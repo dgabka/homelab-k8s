@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: paperless
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:8.6.3-alpine
+          ports:
+            - name: redis
+              containerPort: 6739
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+          livenessProbe:
+            tcpSocket:
+              port: redis
+            initialDelaySeconds: 5
+          readinessProbe:
+            tcpSocket:
+              port: redis
+            initialDelaySeconds: 5

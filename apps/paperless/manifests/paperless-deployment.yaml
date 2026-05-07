@@ -1,0 +1,97 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: paperless
+  namespace: paperless
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: paperless
+  template:
+    metadata:
+      labels:
+        app: paperless
+    spec:
+      containers:
+        - name: paperless
+          image: ghcr.io/paperless-ngx/paperless-ngx:2.20
+          ports:
+            - name: http
+              containerPort: 8000
+          env:
+            # Database
+            - name: PAPERLESS_DBHOST
+              value: postgres
+            - name: PAPERLESS_DBPORT
+              value: "5432"
+            - name: PAPERLESS_DBNAME
+              value: paperless
+            - name: PAPERLESS_DBUSER
+              value: paperless
+            # Redis
+            - name: PAPERLESS_REDIS
+              value: redis://redis:6379
+            # URLs / hosts
+            - name: PAPERLESS_URL
+              value: https://paperless.k8s.hyperion.internal
+            - name: PAPERLESS_ALLOWED_HOSTS
+              value: paperless.k8s.hyperion.internal,paperless.internal
+            - name: PAPERLESS_CSRF_TRUSTED_ORIGINS
+              value: https://paperless.k8s.hyperion.internal,http://paperless.k8s.hyperion.internal,https://paperless.internal,http://paperless.internal
+            # Misc
+            - name: PAPERLESS_TIME_ZONE
+              value: Europe/Warsaw
+            - name: PAPERLESS_OCR_LANGUAGE
+              value: eng+pol
+            - name: USERMAP_UID
+              value: "1000"
+            - name: USERMAP_GID
+              value: "1000"
+          envFrom:
+            - secretRef:
+                name: paperless-app
+          volumeMounts:
+            - name: data
+              mountPath: /usr/src/paperless/data
+            - name: media
+              mountPath: /usr/src/paperless/media
+            - name: consume
+              mountPath: /usr/src/paperless/consume
+            - name: export
+              mountPath: /usr/src/paperless/export
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8000
+            initialDelaySeconds: 120
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8000
+            initialDelaySeconds: 60
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              memory: 2Gi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: paperless-data
+        - name: media
+          persistentVolumeClaim:
+            claimName: paperless-media
+        - name: consume
+          persistentVolumeClaim:
+            claimName: paperless-consume
+        - name: export
+          persistentVolumeClaim:
+            claimName: paperless-export
