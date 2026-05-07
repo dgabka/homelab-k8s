@@ -68,6 +68,9 @@ spec:
             httpGet:
               path: /
               port: 8000
+              httpHeaders:
+                - name: Host
+                  value: paperless.k8s.hyperion.internal
             initialDelaySeconds: 120
             periodSeconds: 30
             timeoutSeconds: 10
@@ -76,6 +79,9 @@ spec:
             httpGet:
               path: /
               port: 8000
+              httpHeaders:
+                - name: Host
+                  value: paperless.k8s.hyperion.internal
             initialDelaySeconds: 60
             periodSeconds: 10
           resources:
