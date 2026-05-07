@@ -20,7 +20,7 @@ spec:
           image: redis:8.6.3-alpine
           ports:
             - name: redis
-              containerPort: 6739
+              containerPort: 6379
           resources:
             requests:
               cpu: 50m
