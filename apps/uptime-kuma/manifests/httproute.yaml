@@ -9,6 +9,8 @@ spec:
       namespace: traefik # name of the gateway
   hostnames:
     - uptime.k8s.hyperion.internal
+    - kuma.k8s.hyperion.internal
+    - kuma.internal
   rules:
     - matches:
         - path:
