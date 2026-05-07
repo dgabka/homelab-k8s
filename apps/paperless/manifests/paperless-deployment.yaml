@@ -46,6 +46,8 @@ spec:
               value: Europe/Warsaw
             - name: PAPERLESS_OCR_LANGUAGE
               value: eng+pol
+            - name: PAPERLESS_OCR_LANGUAGES
+              value: pol
             - name: USERMAP_UID
               value: "1000"
             - name: USERMAP_GID
