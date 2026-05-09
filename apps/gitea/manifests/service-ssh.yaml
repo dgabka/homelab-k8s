@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: gitea-ssh
+  namespace: gitea
+spec:
+  selector:
+    app: gitea
+  ports:
+    - name: ssh
+      port: 2222
+      targetPort: ssh
+      protocol: TCP
+  type: LoadBalancer

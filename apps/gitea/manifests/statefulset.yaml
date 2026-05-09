@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: gitea
+  namespace: gitea
+spec:
+  serviceName: gitea
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gitea
+  template:
+    metadata:
+      labels:
+        app: gitea
+    spec:
+      enableServiceLinks: false
+      securityContext:
+        fsGroup: 1000
+      containers:
+        - name: gitea
+          image: gitea/gitea:1.26-rootless
+          ports:
+            - name: http
+              containerPort: 3000
+            - name: ssh
+              containerPort: 2222
+          env:
+            # Server
+            - name: GITEA__server__DOMAIN
+              value: gitea.k8s.hyperion.internal
+            - name: GITEA__server__ROOT_URL
+              value: http://gitea.k8s.hyperion.internal/
+            - name: GITEA__server__SSH_DOMAIN
+              value: hyperion.internal
+            - name: GITEA__server__SSH_PORT
+              value: "2222"
+            - name: GITEA__server__SSH_LISTEN_PORT
+              value: "2222"
+            - name: GITEA__server__START_SSH_SERVER
+              value: "true"
+            - name: GITEA__server__BUILTIN_SSH_SERVER_USER
+              value: git
+            # Database
+            - name: GITEA__database__DB_TYPE
+              value: sqlite3
+            - name: GITEA__database__PATH
+              value: /var/lib/gitea/data/gitea.db
+            # Service: don't allow random people to register
+            - name: GITEA__service__DISABLE_REGISTRATION
+              value: "true"
+            - name: GITEA__service__REQUIRE_SIGNIN_VIEW
+              value: "true"
+            # Default branch name
+            - name: GITEA__repository__DEFAULT_BRANCH
+              value: main
+          envFrom:
+            - secretRef:
+                name: gitea-config
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/gitea
+            - name: config
+              mountPath: /etc/gitea
+          livenessProbe:
+            httpGet:
+              path: /api/healthz
+              port: 3000
+            initialDelaySeconds: 90
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /api/healthz
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: gitea-data
+        - name: config
+          emptyDir: {}
