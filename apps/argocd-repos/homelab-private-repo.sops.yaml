@@ -1,0 +1,30 @@
+apiVersion: isindir.github.com/v1alpha3
+kind: SopsSecret
+metadata:
+    name: argocd-gitea-creds
+    namespace: argocd
+spec:
+    secretTemplates:
+        - name: gitea-private-repo
+          labels:
+            argocd.argoproj.io/secret-type: repository
+          stringData:
+            type: ENC[AES256_GCM,data:szg3,iv:WDxmrCyTqduaoa0DxgcZS3kbh5fmAAJ5P3X1kszWGvc=,tag:t+/Z+3k1vc1nxnpJgfAhUg==,type:str]
+            url: ENC[AES256_GCM,data:R9J3w2JITr3Xwlh+PWCjIfCfgaOU0xKqdGR1U16pKtMMFsRePNcTHLISpTje7fWsoxMmr3a2fcfST5OH304a,iv:ZlVqOTdRVca6FojMaPZJOiVpAVAMV3exNDIQv8U4Fjw=,tag:ajO0RrWC3cQ+pDtKKppCcw==,type:str]
+            username: ENC[AES256_GCM,data:fSxLM/il,iv:XDZuv6kNTMFmXt1uYug3p3IXdFIH0UI70b/4eqBFYlk=,tag:hm1Cp4ND3RuOSyKXgAG/Tw==,type:str]
+            password: ENC[AES256_GCM,data:p9yZm/J79jsYVWhNfyCXc0syLZM5ZWIEZ6r0MEMG98kdI7cKW2trnA==,iv:t2c/IpInJVtDU59sLGvX0mzWk/LHtKlJeQ4xBqshB9M=,tag:BbmFFsis67/HxTEdFKi34Q==,type:str]
+sops:
+    age:
+        - recipient: age1qxy5wve7cm5v2wev79de5uc4ceqhy9axakqy6szhwq3prvp66cksahtu5z
+          enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBHNmNNbzFiN1BlNlFZWkZJ
+            dEhVU2VoZENNWk41Wlp2QXo4MldDZjdmSlZFCm5lK2JMV0gzSG1JRmpoRDFiR2M5
+            dVhSY3FmU0pLU3Q3MzkvQUpBbUt4Q0UKLS0tIFFvUW1LbkpzU1Rrbk5aakdJK3dt
+            RnNpNEs4eGZKeFM4a281V1BpSUJNNGMK7jw48VwwIvOmwYyJVReP2TzdTEZQlDbj
+            2o5brgN8vi83W8KWZ/haDeCgU2O3Ng+L37/DSidge7GFA9q2IBjAEw==
+            -----END AGE ENCRYPTED FILE-----
+    lastmodified: "2026-05-10T00:10:55Z"
+    mac: ENC[AES256_GCM,data:Y6PH1Xo71DXHOdcBvK//n3ri886GPvgVQdh+7WtgZP8NLU7K6BfP2pet3bX13ax4j45k9L8UAI1jbcHLz5f0ZblP6G6vLOlLt3fgMhNS0Cw5GCYoc8YxhZ4nonGBsnT/6laEq89sO5zVjtWfYA7svPP31rTK1XopxfMc3fCBLC0=,iv:wiQQcB2UkJdMccx0P5YoDm08tr/6cG6HqCv8pq5pfiE=,tag:qKKSGqymIkXzMJ2cANzI4Q==,type:str]
+    encrypted_regex: ^(data|stringData)$
+    version: 3.12.2
