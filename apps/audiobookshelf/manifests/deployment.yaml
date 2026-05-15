@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: audiobookshelf
+  namespace: audiobookshelf
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: audiobookshelf
+  template:
+    metadata:
+      labels:
+        app: audiobookshelf
+    spec:
+      enableServiceLinks: false
+      securityContext:
+        fsGroup: 1000
+      containers:
+        - name: audiobookshelf
+          image: advplyr/audiobookshelf:2.34.0
+          ports:
+            - name: http
+              containerPort: 80
+          env:
+            - name: TZ
+              value: Europe/Warsaw
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: metadata
+              mountPath: /metadata
+            - name: media
+              mountPath: /mnt/Seagate/Media
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+              httpHeaders:
+                - name: Host
+                  value: audiobookshelf.k8s.hyperion.internal
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+              httpHeaders:
+                - name: Host
+                  value: audiobookshelf.k8s.hyperion.internal
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: audiobookshelf-config
+        - name: metadata
+          persistentVolumeClaim:
+            claimName: audiobookshelf-metadata
+        - name: media
+          hostPath:
+            path: /mnt/Seagate/Media
+            type: Directory

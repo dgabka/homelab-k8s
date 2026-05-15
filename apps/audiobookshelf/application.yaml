@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: audiobookshelf
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/dgabka/homelab-k8s.git
+    targetRevision: HEAD
+    path: apps/audiobookshelf/manifests
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: audiobookshelf
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
