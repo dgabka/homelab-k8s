@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jellyfin
+  namespace: jellyfin
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: jellyfin
+  template:
+    metadata:
+      labels:
+        app: jellyfin
+    spec:
+      enableServiceLinks: false
+      securityContext:
+        fsGroup: 1000
+      containers:
+        - name: jellyfin
+          image: jellyfin/jellyfin:10.11.8
+          ports:
+            - name: http
+              containerPort: 8096
+          env:
+            - name: TZ
+              value: Europe/Warsaw
+            - name: JELLYFIN_PublishedServerUrl
+              value: "http://jellyfin.k8s.hyperion.internal"
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: cache
+              mountPath: /cache
+            - name: media
+              mountPath: /mnt/Seagate/Media
+            - name: transcodes
+              mountPath: /transcodes
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8096
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8096
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              memory: 4Gi
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: jellyfin-config
+        - name: cache
+          emptyDir:
+            sizeLimit: 5Gi
+        - name: transcodes
+          emptyDir:
+            sizeLimit: 20Gi
+        - name: media
+          hostPath:
+            path: /mnt/Seagate/Media
+            type: Directory
