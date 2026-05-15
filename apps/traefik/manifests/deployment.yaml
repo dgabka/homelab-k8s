@@ -25,8 +25,8 @@ spec:
           args:
             - --providers.kubernetesgateway
             - --providers.kubernetesgateway.experimentalchannel=false
-            - --entrypoints.web.address=:8800
-            - --entrypoints.websecure.address=:8443
+            - --entrypoints.web.address=:80
+            - --entrypoints.websecure.address=:443
             - --entrypoints.traefik.address=:8082
             - --log.level=INFO
             - --accesslog=true
@@ -35,9 +35,9 @@ spec:
             - --ping=true
           ports:
             - name: web
-              containerPort: 8800
+              containerPort: 80
             - name: websecure
-              containerPort: 8443
+              containerPort: 443
             - name: dashboard
               containerPort: 8082
           resources:
