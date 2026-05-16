@@ -30,6 +30,12 @@ grafana:
     analytics:
       reporting_enabled: false
       check_for_updates: false
+  initChownData:
+    enabled: false
+  securityContext:
+    runAsUser: 472
+    runAsGroup: 472
+    fsGroup: 472
 alertmanager:
   alertmanagerSpec:
     storage:
