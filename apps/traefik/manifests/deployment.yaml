@@ -28,6 +28,11 @@ spec:
             - --entrypoints.web.address=:80
             - --entrypoints.websecure.address=:443
             - --entrypoints.traefik.address=:8082
+            - --metrics.prometheus=true
+            - --metrics.prometheus.addrouterslabels=true
+            - --metrics.prometheus.addserviceslabels=true
+            - --metrics.prometheus.entryPoint=metrics
+            - --entrypoints.metrics.address=:9100
             - --log.level=INFO
             - --accesslog=true
             - --api.dashboard=true
@@ -40,6 +45,8 @@ spec:
               containerPort: 443
             - name: dashboard
               containerPort: 8082
+            - name: metrics
+              containerPort: 9100
           resources:
             requests:
               cpu: 50m

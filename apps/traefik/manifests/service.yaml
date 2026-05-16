@@ -3,6 +3,8 @@ kind: Service
 metadata:
   name: traefik
   namespace: traefik
+  labels:
+    app: traefik
 spec:
   type: LoadBalancer
   selector:
@@ -15,4 +17,21 @@ spec:
     - name: websecure
       port: 443
       targetPort: websecure
+      protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: traefik-metrics
+  namespace: traefik
+  labels:
+    app: traefik
+spec:
+  type: ClusterIP
+  selector:
+    app: traefik
+  ports:
+    - name: metrics
+      port: 9100
+      targetPort: metrics
       protocol: TCP

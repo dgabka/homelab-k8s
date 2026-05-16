@@ -1,6 +1,4 @@
-# kube-prometheus-stack values
 fullnameOverride: kps
-# Prometheus configuration
 prometheus:
   prometheusSpec:
     retention: 30d
@@ -13,13 +11,13 @@ prometheus:
           resources:
             requests:
               storage: 20Gi
+    # Scrape any ServiceMonitor / PodMonitor / PrometheusRule in any namespace
     serviceMonitorSelectorNilUsesHelmValues: false
     podMonitorSelectorNilUsesHelmValues: false
     ruleSelectorNilUsesHelmValues: false
     probeSelectorNilUsesHelmValues: false
-# Grafana configuration
 grafana:
-  adminPassword: "" # generate randomly on first install
+  adminPassword: ""
   persistence:
     enabled: true
     storageClassName: local-path
@@ -32,7 +30,6 @@ grafana:
     analytics:
       reporting_enabled: false
       check_for_updates: false
-# Alertmanager
 alertmanager:
   alertmanagerSpec:
     storage:
@@ -47,19 +44,14 @@ alertmanager:
     global:
       resolve_timeout: 5m
     route:
-      receiver: ntfy
+      receiver: "null"
       group_by: ['alertname', 'namespace']
       group_wait: 30s
       group_interval: 5m
       repeat_interval: 12h
     receivers:
-      - name: ntfy
-        webhook_configs:
-          - url: "http://ntfy-sh.ntfy-sh.svc.cluster.local/alerts" # update if your ntfy lives elsewhere
-            # ntfy accepts plain POST bodies; we'll filter via labels in the topic
-# Node exporter — DaemonSet for host metrics
+      - name: "null"
 nodeExporter:
   enabled: true
-# kube-state-metrics — exports k8s API objects as metrics
 kube-state-metrics:
   enabled: true
