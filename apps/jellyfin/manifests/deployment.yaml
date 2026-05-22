@@ -64,10 +64,10 @@ spec:
             claimName: jellyfin-config
         - name: cache
           emptyDir:
-            sizeLimit: 5Gi
+            sizeLimit: 30Gi
         - name: transcodes
           emptyDir:
-            sizeLimit: 20Gi
+            sizeLimit: 30Gi
         - name: media
           hostPath:
             path: /mnt/Seagate/Media
