@@ -36,8 +36,6 @@ spec:
               mountPath: /cache
             - name: media
               mountPath: /mnt/Seagate/Media
-            - name: transcodes
-              mountPath: /transcodes
           livenessProbe:
             httpGet:
               path: /health
@@ -63,9 +61,6 @@ spec:
           persistentVolumeClaim:
             claimName: jellyfin-config
         - name: cache
-          emptyDir:
-            sizeLimit: 30Gi
-        - name: transcodes
           emptyDir:
             sizeLimit: 30Gi
         - name: media
