@@ -14,10 +14,13 @@ spec:
       helm:
         releaseName: kps
         valueFiles:
-          - $values/apps/monitoring/manifests/values.yaml
+          - $values/apps/monitoring/values.yaml
     - repoURL: https://github.com/dgabka/homelab-k8s.git
       targetRevision: HEAD
       ref: values
+    - repoURL: https://github.com/dgabka/homelab-k8s.git
+      targetRevision: HEAD
+      path: apps/monitoring/manifests
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring
