@@ -23,7 +23,8 @@ spec:
                 - |
                   set -e
                   echo "Starting document_exporter at $(date)"
-                  document_exporter /usr/src/paperless/export/
+                  cd /usr/src/paperless/src
+                  python3 manage.py document_exporter /usr/src/paperless/export/
                   echo "Export complete at $(date)"
                   echo "Files in export dir: $(ls /usr/src/paperless/export/ | wc -l)"
               env:
