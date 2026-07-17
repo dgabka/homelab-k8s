@@ -1,0 +1,70 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: openclaw
+  namespace: openclaw
+spec:
+  ports:
+    - name: http
+      port: 18789
+      targetPort: 18789
+---
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: openclaw
+  namespace: openclaw
+  labels:
+    kubernetes.io/service-name: openclaw
+addressType: IPv4
+ports:
+  - name: http
+    protocol: TCP
+    port: 18789
+endpoints:
+  - addresses:
+      - 192.168.70.3
+    conditions:
+      ready: true
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: openclaw
+  namespace: openclaw
+spec:
+  parentRefs:
+    - name: main
+      namespace: traefik
+      sectionName: https
+  hostnames:
+    - openclaw.k8s.hyperion.internal
+    - openclaw.internal
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: openclaw
+          port: 18789
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: openclaw-redirect
+  namespace: openclaw
+spec:
+  parentRefs:
+    - name: main
+      namespace: traefik
+      sectionName: http
+  hostnames:
+    - openclaw.k8s.hyperion.internal
+    - openclaw.internal
+  rules:
+    - filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            statusCode: 301
