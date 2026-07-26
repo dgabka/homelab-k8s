@@ -1,0 +1,20 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: mealie
+  namespace: mealie
+spec:
+  parentRefs:
+    - name: main
+      namespace: traefik
+  hostnames:
+    - mealie.k8s.hyperion.internal
+    - mealie.internal
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: mealie
+          port: 80
