@@ -18,9 +18,13 @@ spec:
       enableServiceLinks: false
       securityContext:
         fsGroup: 1000
+        supplementalGroups:
+          - 303 # render group on hyperion
       containers:
         - name: jellyfin
           image: jellyfin/jellyfin:10.11.8
+          securityContext:
+            privileged: true
           ports:
             - name: http
               containerPort: 8096
@@ -36,6 +40,8 @@ spec:
               mountPath: /cache
             - name: media
               mountPath: /mnt/Seagate/Media
+            - name: render-device
+              mountPath: /dev/dri/renderD128
           livenessProbe:
             httpGet:
               path: /health
@@ -67,3 +73,7 @@ spec:
           hostPath:
             path: /mnt/Seagate/Media
             type: Directory
+        - name: render-device
+          hostPath:
+            path: /dev/dri/renderD128
+            type: CharDevice
