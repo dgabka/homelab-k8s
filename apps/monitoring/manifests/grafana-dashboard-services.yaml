@@ -1,0 +1,144 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-services
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  services.json: |-
+    {
+      "annotations": {
+        "list": [
+          {
+            "datasource": {"type": "prometheus", "uid": "prometheus"},
+            "enable": true,
+            "expr": "increase(argocd_app_sync_total{dry_run=\"false\"}[1m]) > 0",
+            "iconColor": "blue",
+            "name": "Argo CD syncs",
+            "step": "1m",
+            "tagKeys": "name,phase",
+            "textFormat": "{{name}} sync {{phase}}",
+            "titleFormat": "Argo CD: {{name}}"
+          }
+        ]
+      },
+      "description": "Traffic, errors, latency, and deployment activity for services exposed through Traefik.",
+      "editable": true,
+      "graphTooltip": 1,
+      "panels": [
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "decimals": 2, "thresholds": {"mode": "absolute", "steps": [{"color": "green"}]}, "unit": "reqps"}},
+          "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+          "id": 1,
+          "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "targets": [{"expr": "sum(rate(traefik_service_requests_total[$__rate_interval]))", "refId": "A"}],
+          "title": "Requests",
+          "type": "stat"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "decimals": 2, "max": 1, "min": 0, "thresholds": {"mode": "absolute", "steps": [{"color": "green"}, {"color": "orange", "value": 0.01}, {"color": "red", "value": 0.05}]}, "unit": "percentunit"}},
+          "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
+          "id": 2,
+          "options": {"colorMode": "background", "graphMode": "none", "justifyMode": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "targets": [{"expr": "sum(rate(traefik_service_requests_total{code=~\"5..\"}[$__rate_interval])) / clamp_min(sum(rate(traefik_service_requests_total{code=~\"[1-5]..\"}[$__rate_interval])), 1e-9)", "refId": "A"}],
+          "title": "5xx percentage",
+          "type": "stat"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "decimals": 2, "thresholds": {"mode": "absolute", "steps": [{"color": "green"}, {"color": "orange", "value": 0.5}, {"color": "red", "value": 2}]}, "unit": "s"}},
+          "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0},
+          "id": 3,
+          "options": {"colorMode": "background", "graphMode": "none", "justifyMode": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "targets": [{"expr": "histogram_quantile(0.95, sum by (le) (rate(traefik_service_request_duration_seconds_bucket[$__rate_interval])))", "refId": "A"}],
+          "title": "p95 latency",
+          "type": "stat"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "decimals": 0, "thresholds": {"mode": "absolute", "steps": [{"color": "green"}]}, "unit": "short"}},
+          "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0},
+          "id": 4,
+          "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "targets": [{"expr": "sum(traefik_open_connections{entrypoint=~\"web|websecure\"})", "refId": "A"}],
+          "title": "Open connections",
+          "type": "stat"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "fieldConfig": {"defaults": {"unit": "reqps"}},
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+          "id": 5,
+          "options": {"legend": {"calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}},
+          "targets": [{"expr": "sum by (app) (label_replace(rate(traefik_service_requests_total[$__rate_interval]), \"app\", \"$1\", \"exported_service\", \"^[^-]+-(.+)-http-[^-]+@.*$\"))", "legendFormat": "{{app}}", "refId": "A"}],
+          "title": "Request rate by service",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "fieldConfig": {"defaults": {"unit": "s"}},
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+          "id": 6,
+          "options": {"legend": {"calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}},
+          "targets": [{"expr": "histogram_quantile(0.95, sum by (le, app) (label_replace(rate(traefik_service_request_duration_seconds_bucket[$__rate_interval]), \"app\", \"$1\", \"exported_service\", \"^[^-]+-(.+)-http-[^-]+@.*$\")))", "legendFormat": "{{app}}", "refId": "A"}],
+          "title": "p95 latency by service",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "fieldConfig": {"defaults": {"unit": "reqps"}},
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12},
+          "id": 7,
+          "options": {"legend": {"calcs": ["sum", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}},
+          "targets": [{"expr": "sum by (app) (label_replace(rate(traefik_service_requests_total{code=~\"5..\"}[$__rate_interval]), \"app\", \"$1\", \"exported_service\", \"^[^-]+-(.+)-http-[^-]+@.*$\"))", "legendFormat": "{{app}}", "refId": "A"}],
+          "title": "5xx rate by service",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "fieldConfig": {"defaults": {"unit": "Bps"}},
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12},
+          "id": 8,
+          "options": {"legend": {"calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}},
+          "targets": [
+            {"expr": "sum by (app) (label_replace(rate(traefik_service_requests_bytes_total[$__rate_interval]), \"app\", \"$1\", \"exported_service\", \"^[^-]+-(.+)-http-[^-]+@.*$\"))", "legendFormat": "{{app}} received", "refId": "A"},
+            {"expr": "sum by (app) (label_replace(rate(traefik_service_responses_bytes_total[$__rate_interval]), \"app\", \"$1\", \"exported_service\", \"^[^-]+-(.+)-http-[^-]+@.*$\"))", "legendFormat": "{{app}} sent", "refId": "B"}
+          ],
+          "title": "Bandwidth by service",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "fieldConfig": {"defaults": {"decimals": 2, "unit": "reqps"}},
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 20},
+          "id": 9,
+          "options": {"cellHeight": "sm", "footer": {"countRows": false, "fields": "", "reducer": ["sum"], "show": false}, "showHeader": true},
+          "targets": [{"expr": "sum by (app, code) (label_replace(rate(traefik_service_requests_total{code!=\"0\"}[$__rate_interval]), \"app\", \"$1\", \"exported_service\", \"^[^-]+-(.+)-http-[^-]+@.*$\"))", "format": "table", "instant": true, "refId": "A"}],
+          "title": "Current status codes",
+          "type": "table"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "fieldConfig": {"defaults": {"decimals": 0, "unit": "short"}},
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 20},
+          "id": 10,
+          "options": {"cellHeight": "sm", "footer": {"countRows": false, "fields": "", "reducer": ["sum"], "show": false}, "showHeader": true},
+          "targets": [{"expr": "sum by (name, phase) (increase(argocd_app_sync_total{dry_run=\"false\"}[$__range])) > 0", "format": "table", "instant": true, "refId": "A"}],
+          "title": "Argo CD syncs in selected range",
+          "type": "table"
+        }
+      ],
+      "refresh": "1m",
+      "schemaVersion": 39,
+      "tags": ["homelab", "services", "traefik"],
+      "templating": {"list": []},
+      "time": {"from": "now-6h", "to": "now"},
+      "timepicker": {},
+      "timezone": "browser",
+      "title": "Homelab Services",
+      "uid": "homelab-services",
+      "version": 1
+    }
