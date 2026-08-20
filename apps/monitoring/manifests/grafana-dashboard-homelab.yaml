@@ -8,21 +8,7 @@ metadata:
 data:
   homelab-overview.json: |-
     {
-      "annotations": {
-        "list": [
-          {
-            "datasource": {"type": "prometheus", "uid": "prometheus"},
-            "enable": true,
-            "expr": "increase(argocd_app_sync_total{dry_run=\"false\"}[1m]) > 0",
-            "iconColor": "blue",
-            "name": "Argo CD syncs",
-            "step": "1m",
-            "tagKeys": "name,phase",
-            "textFormat": "{{name}} sync {{phase}}",
-            "titleFormat": "Argo CD: {{name}}"
-          }
-        ]
-      },
+      "annotations": {"list": []},
       "description": "At-a-glance health and resource usage for the homelab cluster.",
       "editable": true,
       "graphTooltip": 1,
