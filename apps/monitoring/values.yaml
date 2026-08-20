@@ -47,7 +47,26 @@ grafana:
     runAsGroup: 472
     fsGroup: 472
 alertmanager:
-  enabled: false
+  enabled: true
+  alertmanagerSpec:
+    replicas: 1
+    retention: 120h
+    useExistingSecret: true
+    configSecret: alertmanager-config
+    storage:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: local-path
+          accessModes: [ReadWriteOnce]
+          resources:
+            requests:
+              storage: 1Gi
+    resources:
+      requests:
+        cpu: 20m
+        memory: 64Mi
+      limits:
+        memory: 256Mi
 nodeExporter:
   enabled: true
 kube-state-metrics:
