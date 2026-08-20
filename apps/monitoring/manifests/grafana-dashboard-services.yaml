@@ -98,12 +98,12 @@ data:
         },
         {
           "datasource": {"type": "prometheus", "uid": "prometheus"},
-          "fieldConfig": {"defaults": {"decimals": 2, "unit": "reqps"}},
+          "fieldConfig": {"defaults": {}, "overrides": [{"matcher": {"id": "byName", "options": "Value"}, "properties": [{"id": "unit", "value": "reqps"}, {"id": "decimals", "value": 2}]}]},
           "gridPos": {"h": 8, "w": 12, "x": 0, "y": 20},
           "id": 9,
           "options": {"cellHeight": "sm", "footer": {"countRows": false, "fields": "", "reducer": ["sum"], "show": false}, "showHeader": true},
           "targets": [{"expr": "sum by (app, code) (label_replace(rate(traefik_service_requests_total{code!=\"0\"}[$__rate_interval]), \"app\", \"$1\", \"exported_service\", \"^[^-]+-(.+)-http-[^-]+@.*$\"))", "format": "table", "instant": true, "refId": "A"}],
-          "title": "Current status codes",
+          "title": "HTTP responses by status",
           "type": "table"
         },
         {
