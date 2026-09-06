@@ -18,7 +18,9 @@ spec:
       tls:
         mode: Terminate
         certificateRefs:
-          - name: internal-wildcard-tls
+          - group: ''
+            kind: Secret
+            name: internal-wildcard-tls
       allowedRoutes:
         namespaces:
           from: All
