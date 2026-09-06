@@ -1,0 +1,24 @@
+planeVersion: v3.1.4
+
+license:
+  licenseDomain: plane.k8s.hyperion.internal
+  licenseServer: https://prime.plane.so
+
+ingress:
+  enabled: false
+
+ssl:
+  externalTermination: true
+
+env:
+  storageClass: local-path
+  cors_allowed_origins: https://plane.internal
+
+external_secrets:
+  app_env_existingSecret: plane-secrets
+  doc_store_existingSecret: plane-secrets
+  live_env_existingSecret: plane-secrets
+  silo_env_existingSecret: plane-secrets
+  pgdb_existingSecret: plane-secrets
+  rabbitmq_existingSecret: plane-secrets
+  opensearch_existingSecret: plane-secrets

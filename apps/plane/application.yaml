@@ -1,0 +1,33 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: plane
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  sources:
+    - repoURL: https://helm.plane.so/
+      chart: plane-enterprise
+      targetRevision: 3.5.7
+      helm:
+        releaseName: plane
+        valueFiles:
+          - $values/apps/plane/values.yaml
+    - repoURL: https://github.com/dgabka/homelab-k8s.git
+      targetRevision: HEAD
+      ref: values
+    - repoURL: https://github.com/dgabka/homelab-k8s.git
+      targetRevision: HEAD
+      path: apps/plane/manifests
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: plane
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
