@@ -3,8 +3,6 @@ kind: Job
 metadata:
   name: couchdb-init
   namespace: livesync
-  annotations:
-    argocd.argoproj.io/sync-wave: "1"
 spec:
   backoffLimit: 12
   ttlSecondsAfterFinished: 86400
