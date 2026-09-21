@@ -67,6 +67,8 @@ spec:
       nodeSelector:
         kubernetes.io/hostname: hyperion
       securityContext:
+        runAsUser: 5984
+        runAsGroup: 5984
         fsGroup: 5984
       containers:
         - name: couchdb
