@@ -4,8 +4,7 @@ metadata:
   name: bridge
   namespace: livesync
 spec:
-  # Safety gate: enable only after the documented backup and temporary-vault test.
-  replicas: 0
+  replicas: 1
   strategy:
     type: Recreate
   selector:
