@@ -1,0 +1,137 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: bridge-state
+  namespace: livesync
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bridge
+  namespace: livesync
+spec:
+  # Safety gate: enable only after the documented backup and temporary-vault test.
+  replicas: 0
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: livesync-bridge
+  template:
+    metadata:
+      labels:
+        app: livesync-bridge
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: hyperion
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 100
+        fsGroup: 100
+      initContainers:
+        - name: config
+          image: couchdb:3.5.0@sha256:4da3945c7a7b798530fa2d8d1a688669e2844499795e39756dfafcfb57ee4937
+          command:
+            - sh
+            - -ec
+            - |
+              umask 077
+              cat > /config/config.json <<EOF
+              {
+                "peers": [
+                  {
+                    "type": "couchdb",
+                    "name": "remote",
+                    "url": "http://couchdb:5984",
+                    "database": "livesync",
+                    "username": "$APP_USERNAME",
+                    "password": "$APP_PASSWORD",
+                    "passphrase": "$E2EE_PASSPHRASE",
+                    "obfuscatePassphrase": "$E2EE_PASSPHRASE",
+                    "baseDir": "",
+                    "useRemoteTweaks": true
+                  },
+                  {
+                    "type": "storage",
+                    "name": "agent-vault",
+                    "baseDir": "/vault",
+                    "scanOfflineChanges": true,
+                    "exclude": [
+                      ".git/**", ".obsidian/**", ".agents/**", ".DS_Store",
+                      "**/.DS_Store", "Session.vim", "**/Session.vim",
+                      "**/*.tmp", "**/*.swp", "**/*~"
+                    ]
+                  }
+                ]
+              }
+              EOF
+          env:
+            - name: APP_USERNAME
+              valueFrom: {secretKeyRef: {name: livesync-credentials, key: app-username}}
+            - name: APP_PASSWORD
+              valueFrom: {secretKeyRef: {name: livesync-credentials, key: app-password}}
+            - name: E2EE_PASSPHRASE
+              valueFrom: {secretKeyRef: {name: livesync-credentials, key: e2ee-passphrase}}
+          volumeMounts:
+            - name: config
+              mountPath: /config
+      containers:
+        - name: bridge
+          image: ghcr.io/dgabka/livesync-bridge@sha256:2c70c9052f17b91867f2530d3d3966d7620b8725569302699bd03787e0edfd33
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: LSB_CONFIG
+              value: /config/config.json
+            - name: LSB_HEALTH_FILE
+              value: /tmp/lsb-health.json
+          volumeMounts:
+            - name: vault
+              mountPath: /vault
+            - name: state
+              mountPath: /deno-dir/location_data
+            - name: config
+              mountPath: /config
+              readOnly: true
+          startupProbe:
+            exec:
+              command: [sh, -ec, 'test -s /tmp/lsb-health.json']
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -ec
+                - 'grep -q ''"ok":true'' /tmp/lsb-health.json'
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -ec
+                - 'test -s /tmp/lsb-health.json && grep -q ''"restartWorthy":false'' /tmp/lsb-health.json && test $(($(date +%s)-$(stat -c %Y /tmp/lsb-health.json))) -lt 40'
+            periodSeconds: 30
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+      volumes:
+        - name: vault
+          hostPath:
+            path: /home/dgabka/notes
+            type: Directory
+        - name: state
+          persistentVolumeClaim:
+            claimName: bridge-state
+        - name: config
+          emptyDir: {}

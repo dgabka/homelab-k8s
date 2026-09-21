@@ -1,0 +1,44 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: couchdb-init
+  namespace: livesync
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  backoffLimit: 12
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: init
+          image: couchdb:3.5.0@sha256:4da3945c7a7b798530fa2d8d1a688669e2844499795e39756dfafcfb57ee4937
+          command:
+            - sh
+            - -ec
+            - |
+              auth="$ADMIN_USERNAME:$ADMIN_PASSWORD"
+              until curl -fsS -u "$auth" http://couchdb:5984/_up >/dev/null; do sleep 5; done
+              curl -fsS -u "$auth" -X PUT http://couchdb:5984/livesync >/dev/null || status=$?
+              [ "${status:-0}" -eq 0 ] || curl -fsS -u "$auth" http://couchdb:5984/livesync >/dev/null
+              password_json=$(printf '%s' "$APP_PASSWORD" | sed 's/[\\"&]/\\&/g')
+              curl -fsS -u "$auth" -X PUT -H 'Content-Type: application/json' \
+                "http://couchdb:5984/_users/org.couchdb.user:$APP_USERNAME" \
+                --data "{\"name\":\"$APP_USERNAME\",\"password\":\"$password_json\",\"roles\":[],\"type\":\"user\"}" >/dev/null || true
+              curl -fsS -u "$auth" -X PUT -H 'Content-Type: application/json' \
+                http://couchdb:5984/livesync/_security \
+                --data "{\"admins\":{\"names\":[],\"roles\":[]},\"members\":{\"names\":[\"$APP_USERNAME\"],\"roles\":[]}}" >/dev/null
+              curl -fsS -u "$APP_USERNAME:$APP_PASSWORD" http://couchdb:5984/livesync >/dev/null
+          env:
+            - name: ADMIN_USERNAME
+              valueFrom: {secretKeyRef: {name: livesync-credentials, key: admin-username}}
+            - name: ADMIN_PASSWORD
+              valueFrom: {secretKeyRef: {name: livesync-credentials, key: admin-password}}
+            - name: APP_USERNAME
+              valueFrom: {secretKeyRef: {name: livesync-credentials, key: app-username}}
+            - name: APP_PASSWORD
+              valueFrom: {secretKeyRef: {name: livesync-credentials, key: app-password}}
+          resources:
+            requests: {cpu: 10m, memory: 32Mi}
+            limits: {memory: 64Mi}

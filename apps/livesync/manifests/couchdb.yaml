@@ -1,0 +1,122 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: couchdb-config
+  namespace: livesync
+data:
+  livesync.ini: |
+    [couchdb]
+    single_node = true
+    max_document_size = 50000000
+    [chttpd]
+    bind_address = 0.0.0.0
+    enable_cors = true
+    max_http_request_size = 4294967296
+    require_valid_user = true
+    [chttpd_auth]
+    require_valid_user = true
+    [httpd]
+    WWW-Authenticate = Basic realm="couchdb"
+    [cors]
+    credentials = true
+    origins = app://obsidian.md,capacitor://localhost,http://localhost
+    headers = accept,authorization,content-type,origin,referer
+    methods = GET,PUT,POST,HEAD,DELETE
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: couchdb-data
+  namespace: livesync
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: couchdb
+  namespace: livesync
+spec:
+  selector:
+    app: couchdb
+  ports:
+    - name: http
+      port: 5984
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: couchdb
+  namespace: livesync
+spec:
+  serviceName: couchdb
+  replicas: 1
+  selector:
+    matchLabels:
+      app: couchdb
+  template:
+    metadata:
+      labels:
+        app: couchdb
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: hyperion
+      securityContext:
+        fsGroup: 5984
+      containers:
+        - name: couchdb
+          image: couchdb:3.5.0@sha256:4da3945c7a7b798530fa2d8d1a688669e2844499795e39756dfafcfb57ee4937
+          env:
+            - name: COUCHDB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: livesync-credentials
+                  key: admin-username
+            - name: COUCHDB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: livesync-credentials
+                  key: admin-password
+          ports:
+            - name: http
+              containerPort: 5984
+          volumeMounts:
+            - name: data
+              mountPath: /opt/couchdb/data
+            - name: config
+              mountPath: /opt/couchdb/etc/local.d/livesync.ini
+              subPath: livesync.ini
+              readOnly: true
+          startupProbe:
+            exec:
+              command: [sh, -ec, 'curl -fsS -u "$COUCHDB_USER:$COUCHDB_PASSWORD" http://127.0.0.1:5984/_up >/dev/null']
+            periodSeconds: 5
+            failureThreshold: 24
+          readinessProbe:
+            exec:
+              command: [sh, -ec, 'curl -fsS -u "$COUCHDB_USER:$COUCHDB_PASSWORD" http://127.0.0.1:5984/_up >/dev/null']
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: [sh, -ec, 'curl -fsS -u "$COUCHDB_USER:$COUCHDB_PASSWORD" http://127.0.0.1:5984/_up >/dev/null']
+            periodSeconds: 30
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: couchdb-data
+        - name: config
+          configMap:
+            name: couchdb-config
