@@ -4,7 +4,7 @@
 
 - CouchDB 3.5.0 runs once in namespace `livesync`; data is on the `couchdb-data` local-path PVC.
 - LiveSync Bridge is built from upstream commit `c3760beaa0851214da4860903445d7f6420ca025` plus the two-file exclusion overlay in `image/`.
-- The bridge mounts the agent's real vault, `/home/dgabka/notes`, directly on the only cluster node. It runs as the vault owner (`1000:100`), uses `Recreate`, and stores Deno/offline-scan state on `bridge-state`.
+- The bridge mounts the agent's real vault, `/home/dgabka/notes`, directly on the only cluster node. It runs as the vault owner (`1000:100`), uses `Recreate`, and stores Deno/offline-scan state at `/home/dgabka/.openclaw/livesync-bridge-state`.
 - CouchDB is internal at `http://couchdb.livesync.svc:5984` and privately reachable at `https://livesync.k8s.hyperion.internal`. Traefik terminates the existing internal wildcard certificate. There is no public route.
 - Devices and the bridge use the restricted `livesync` CouchDB user. Admin credentials are only used by CouchDB and the idempotent provisioning Job.
 
@@ -66,5 +66,5 @@ On iOS, synchronization resumes while Obsidian is open. Continuous background sy
 - Verify agent freshness: create a uniquely named note on a client, wait for replication, then run `ssh hyperion 'stat /home/dgabka/notes/<note>.md'` and inspect its expected content. Repeat in the opposite direction.
 - Health: `kubectl -n livesync get pods,pvc,job,httproute`; inspect bridge logs without printing its generated config.
 - Upgrade: pin a reviewed upstream commit and base-image digest, rebuild/push, update the image digest, rerun the temporary-vault matrix, then use the normal GitOps commit. `Recreate` prevents overlapping bridge instances.
-- Backup: host Restic covers `/var/lib/rancher/k3s/storage` (both PVCs). The accompanying Nix change adds `/home/dgabka/notes`. Verify both schedules and a restore before relying on them. The Git vault is not a substitute for CouchDB/bridge-state backup.
+- Backup: host Restic covers `/var/lib/rancher/k3s/storage` (the CouchDB PVC) and `.openclaw` (bridge state). The accompanying Nix change adds `/home/dgabka/notes`. Verify the schedule and a restore before relying on it. The Git vault is not a substitute for CouchDB/bridge-state backup.
 - Recovery: stop the bridge first; restore the vault, CouchDB PVC, and bridge-state PVC from one consistent Restic snapshot; start CouchDB, then one bridge. Restore into a temporary location and inspect before replacing real data. Never reset/reseed automatically.
