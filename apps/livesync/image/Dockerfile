@@ -12,5 +12,5 @@ RUN tar -xzf /tmp/source.tar.gz --strip-components=1 -C /app \
  && rm -rf /tmp/source.tar.gz /tmp/overlay
 USER deno
 ENV DENO_DIR=/deno-dir
-RUN deno install --frozen
-CMD ["deno", "task", "run"]
+RUN deno install --frozen && deno cache --frozen main.ts
+CMD ["deno", "run", "--cached-only", "-A", "main.ts"]
