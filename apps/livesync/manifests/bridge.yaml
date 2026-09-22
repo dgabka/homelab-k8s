@@ -70,7 +70,7 @@ spec:
               mountPath: /config
       containers:
         - name: bridge
-          image: ghcr.io/dgabka/livesync-bridge@sha256:2c70c9052f17b91867f2530d3d3966d7620b8725569302699bd03787e0edfd33
+          image: ghcr.io/dgabka/livesync-bridge@sha256:d15fe42bca43e859a35d06ccac8980c6a721593595ca27a81b74dfb2aae6fef8
           imagePullPolicy: IfNotPresent
           env:
             - name: LSB_CONFIG
