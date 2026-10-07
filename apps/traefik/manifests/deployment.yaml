@@ -26,7 +26,10 @@ spec:
             - --providers.kubernetesgateway
             - --providers.kubernetesgateway.experimentalchannel=false
             - --entrypoints.web.address=:80
+            # Allow large media uploads; the default request-body read timeout is 60s.
+            - --entrypoints.web.transport.respondingtimeouts.readtimeout=30m
             - --entrypoints.websecure.address=:443
+            - --entrypoints.websecure.transport.respondingtimeouts.readtimeout=30m
             - --entrypoints.traefik.address=:8082
             - --metrics.prometheus=true
             - --metrics.prometheus.addrouterslabels=true
