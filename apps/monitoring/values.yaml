@@ -81,6 +81,12 @@ alertmanager:
         memory: 256Mi
 nodeExporter:
   enabled: true
+prometheus-node-exporter:
+  prometheus:
+    monitor:
+      relabelings:
+        - sourceLabels: [__meta_kubernetes_pod_node_name]
+          targetLabel: node
 kube-state-metrics:
   enabled: true
 kubeControllerManager:
