@@ -1,0 +1,104 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: storage-alerts
+  namespace: monitoring
+spec:
+  groups:
+    - name: physical-disk-space
+      rules:
+        - alert: NodeFilesystemAlmostOutOfSpace
+          expr: |
+            (
+              node_filesystem_avail_bytes{job="node-exporter",fstype!~"|tmpfs|ramfs|overlay|squashfs",mountpoint!="/nix/store"}
+              / node_filesystem_size_bytes{job="node-exporter"} < 0.15
+              or (
+                node_filesystem_avail_bytes{job="node-exporter",fstype!~"|tmpfs|ramfs|overlay|squashfs",mountpoint!="/nix/store"}
+                / node_filesystem_size_bytes{job="node-exporter"} < 0.40
+                and predict_linear(node_filesystem_avail_bytes{job="node-exporter"}[6h], 4 * 24 * 3600) < 0
+              )
+            ) and node_filesystem_readonly{job="node-exporter"} == 0
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: Disk space low or filling within four days.
+            description: '{{ $labels.instance }} {{ $labels.mountpoint }}: {{ $value | humanizePercentage }} available.'
+        - alert: NodeFilesystemAlmostOutOfSpace
+          expr: |
+            (
+              node_filesystem_avail_bytes{job="node-exporter",fstype!~"|tmpfs|ramfs|overlay|squashfs",mountpoint!="/nix/store"}
+              / node_filesystem_size_bytes{job="node-exporter"} < 0.05
+            ) and node_filesystem_readonly{job="node-exporter"} == 0
+          for: 10m
+          labels:
+            severity: critical
+          annotations:
+            summary: Disk space critically low.
+            description: '{{ $labels.instance }} {{ $labels.mountpoint }}: {{ $value | humanizePercentage }} available.'
+    # local-path PVCs share the physical filesystem monitored above. Keep the
+    # upstream rules for other storage classes, including their opt-out labels.
+    - name: independent-pvc-space
+      rules:
+        - alert: KubePersistentVolumeFillingUp
+          expr: |
+            (
+              kubelet_volume_stats_available_bytes{job="kubelet",metrics_path="/metrics"}
+              / kubelet_volume_stats_capacity_bytes{job="kubelet",metrics_path="/metrics"} < 0.03
+              and kubelet_volume_stats_used_bytes{job="kubelet",metrics_path="/metrics"} > 0
+              unless on (cluster, namespace, persistentvolumeclaim) kube_persistentvolumeclaim_access_mode{access_mode="ReadOnlyMany"} == 1
+              unless on (cluster, namespace, persistentvolumeclaim) kube_persistentvolumeclaim_labels{label_excluded_from_alerts="true"} == 1
+            ) unless on (cluster, namespace, persistentvolumeclaim) kube_persistentvolumeclaim_info{storageclass="local-path"}
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: PersistentVolume space critically low.
+            description: '{{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }}: {{ $value | humanizePercentage }} available.'
+        - alert: KubePersistentVolumeFillingUp
+          expr: |
+            (
+              kubelet_volume_stats_available_bytes{job="kubelet",metrics_path="/metrics"}
+              / kubelet_volume_stats_capacity_bytes{job="kubelet",metrics_path="/metrics"} < 0.15
+              and kubelet_volume_stats_used_bytes{job="kubelet",metrics_path="/metrics"} > 0
+              and predict_linear(kubelet_volume_stats_available_bytes{job="kubelet",metrics_path="/metrics"}[6h], 4 * 24 * 3600) < 0
+              unless on (cluster, namespace, persistentvolumeclaim) kube_persistentvolumeclaim_access_mode{access_mode="ReadOnlyMany"} == 1
+              unless on (cluster, namespace, persistentvolumeclaim) kube_persistentvolumeclaim_labels{label_excluded_from_alerts="true"} == 1
+            ) unless on (cluster, namespace, persistentvolumeclaim) kube_persistentvolumeclaim_info{storageclass="local-path"}
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: PersistentVolume filling within four days.
+            description: '{{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }}: {{ $value | humanizePercentage }} available.'
+        - alert: KubePersistentVolumeInodesFillingUp
+          expr: |
+            (
+              kubelet_volume_stats_inodes_free{job="kubelet",metrics_path="/metrics"}
+              / kubelet_volume_stats_inodes{job="kubelet",metrics_path="/metrics"} < 0.03
+              and kubelet_volume_stats_inodes_used{job="kubelet",metrics_path="/metrics"} > 0
+              unless on (cluster, namespace, persistentvolumeclaim) kube_persistentvolumeclaim_access_mode{access_mode="ReadOnlyMany"} == 1
+              unless on (cluster, namespace, persistentvolumeclaim) kube_persistentvolumeclaim_labels{label_excluded_from_alerts="true"} == 1
+            ) unless on (cluster, namespace, persistentvolumeclaim) kube_persistentvolumeclaim_info{storageclass="local-path"}
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: PersistentVolume inodes critically low.
+            description: '{{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }}: {{ $value | humanizePercentage }} inodes available.'
+        - alert: KubePersistentVolumeInodesFillingUp
+          expr: |
+            (
+              kubelet_volume_stats_inodes_free{job="kubelet",metrics_path="/metrics"}
+              / kubelet_volume_stats_inodes{job="kubelet",metrics_path="/metrics"} < 0.15
+              and kubelet_volume_stats_inodes_used{job="kubelet",metrics_path="/metrics"} > 0
+              and predict_linear(kubelet_volume_stats_inodes_free{job="kubelet",metrics_path="/metrics"}[6h], 4 * 24 * 3600) < 0
+              unless on (cluster, namespace, persistentvolumeclaim) kube_persistentvolumeclaim_access_mode{access_mode="ReadOnlyMany"} == 1
+              unless on (cluster, namespace, persistentvolumeclaim) kube_persistentvolumeclaim_labels{label_excluded_from_alerts="true"} == 1
+            ) unless on (cluster, namespace, persistentvolumeclaim) kube_persistentvolumeclaim_info{storageclass="local-path"}
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: PersistentVolume inodes filling within four days.
+            description: '{{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }}: {{ $value | humanizePercentage }} inodes available.'

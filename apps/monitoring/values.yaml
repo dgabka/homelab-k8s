@@ -1,6 +1,17 @@
 fullnameOverride: kps
+defaultRules:
+  node:
+    # Nix bind-mounts /nix/store from /; do not alert twice on the SSD.
+    fsSelector: 'fstype!~"|tmpfs|ramfs|overlay|squashfs",mountpoint!="/nix/store"'
+  disabled:
+    # Replaced below with physical-disk thresholds and storage-class-aware PVC rules.
+    NodeFilesystemSpaceFillingUp: true
+    NodeFilesystemAlmostOutOfSpace: true
+    KubePersistentVolumeFillingUp: true
+    KubePersistentVolumeInodesFillingUp: true
 prometheus:
   prometheusSpec:
+    externalUrl: https://prometheus.k8s.hyperion.internal
     retention: 30d
     retentionSize: "18GB"
     storageSpec:
@@ -49,6 +60,7 @@ grafana:
 alertmanager:
   enabled: true
   alertmanagerSpec:
+    externalUrl: https://alertmanager.k8s.hyperion.internal
     replicas: 1
     retention: 120h
     useExistingSecret: true
