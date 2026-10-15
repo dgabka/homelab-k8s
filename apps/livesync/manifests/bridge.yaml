@@ -4,7 +4,7 @@ metadata:
   name: bridge
   namespace: livesync
 spec:
-  replicas: 1
+  replicas: 0
   strategy:
     type: Recreate
   selector:
@@ -119,7 +119,7 @@ spec:
             type: Directory
         - name: state
           hostPath:
-            path: /home/dgabka/.openclaw/livesync-bridge-state
+            path: /home/dgabka/.local/state/livesync-bridge
             type: Directory
         - name: config
           emptyDir: {}
