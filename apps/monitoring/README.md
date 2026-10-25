@@ -6,7 +6,9 @@
   PVC notifications return rather than silently losing coverage.
 - Node disk warnings fire below 15% available for 30 minutes, or below 40%
   with a six-hour trend predicting exhaustion within four days. Critical fires
-  below 5% for 10 minutes. Existing node inode alerts remain enabled.
+  below 5% for 10 minutes. `/mnt/Seagate` and `/mnt/LEXAR` instead warn below
+  5% for 30 minutes and go critical below 2% for 10 minutes, without predictive
+  warnings. Existing node inode alerts remain enabled.
 - `/nix/store` is a bind mount of `/` on Hyperion and is excluded from filesystem
   rules. Other physical mounts, including media disks, remain monitored.
 - Revisit the local-path exclusion if its storage directories move to a

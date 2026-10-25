@@ -11,12 +11,16 @@ spec:
           expr: |
             min by (cluster, instance, node, mountpoint) (
             (
-              node_filesystem_avail_bytes{job="node-exporter",fstype!~"|tmpfs|ramfs|overlay|squashfs",mountpoint!="/nix/store"}
+              node_filesystem_avail_bytes{job="node-exporter",fstype!~"|tmpfs|ramfs|overlay|squashfs",mountpoint!="/nix/store",mountpoint!~"/mnt/(Seagate|LEXAR)"}
               / node_filesystem_size_bytes{job="node-exporter"} < 0.15
               or (
-                node_filesystem_avail_bytes{job="node-exporter",fstype!~"|tmpfs|ramfs|overlay|squashfs",mountpoint!="/nix/store"}
+                node_filesystem_avail_bytes{job="node-exporter",fstype!~"|tmpfs|ramfs|overlay|squashfs",mountpoint!="/nix/store",mountpoint!~"/mnt/(Seagate|LEXAR)"}
                 / node_filesystem_size_bytes{job="node-exporter"} < 0.40
                 and predict_linear(node_filesystem_avail_bytes{job="node-exporter"}[6h], 4 * 24 * 3600) < 0
+              )
+              or (
+                node_filesystem_avail_bytes{job="node-exporter",fstype!~"|tmpfs|ramfs|overlay|squashfs",mountpoint=~"/mnt/(Seagate|LEXAR)"}
+                / node_filesystem_size_bytes{job="node-exporter"} < 0.05
               )
             ) and node_filesystem_readonly{job="node-exporter"} == 0
             ) * 100
@@ -30,8 +34,12 @@ spec:
           expr: |
             min by (cluster, instance, node, mountpoint) (
             (
-              node_filesystem_avail_bytes{job="node-exporter",fstype!~"|tmpfs|ramfs|overlay|squashfs",mountpoint!="/nix/store"}
+              node_filesystem_avail_bytes{job="node-exporter",fstype!~"|tmpfs|ramfs|overlay|squashfs",mountpoint!="/nix/store",mountpoint!~"/mnt/(Seagate|LEXAR)"}
               / node_filesystem_size_bytes{job="node-exporter"} < 0.05
+              or (
+                node_filesystem_avail_bytes{job="node-exporter",fstype!~"|tmpfs|ramfs|overlay|squashfs",mountpoint=~"/mnt/(Seagate|LEXAR)"}
+                / node_filesystem_size_bytes{job="node-exporter"} < 0.02
+              )
             ) and node_filesystem_readonly{job="node-exporter"} == 0
             ) * 100
           for: 10m
