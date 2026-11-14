@@ -22,7 +22,7 @@ spec:
           - 303 # render group on hyperion
       containers:
         - name: jellyfin
-          image: jellyfin/jellyfin:12.1
+          image: jellyfin/jellyfin:12.4
           securityContext:
             privileged: true
           ports:
