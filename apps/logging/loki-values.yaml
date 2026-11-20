@@ -2,6 +2,13 @@ deploymentMode: Monolithic
 
 loki:
   auth_enabled: false
+  rulerConfig:
+    storage:
+      type: local
+      local:
+        directory: /rules
+    rule_path: /var/loki/ruler-tmp
+    alertmanager_url: http://kps-alertmanager.monitoring.svc.cluster.local:9093
   analytics:
     reporting_enabled: false
   commonConfig:
@@ -28,7 +35,7 @@ loki:
 
 singleBinary:
   replicas: 1
-  sidecar: false
+  sidecar: true
   persistence:
     enabled: true
     storageClass: local-path
@@ -39,6 +46,14 @@ singleBinary:
       memory: 256Mi
     limits:
       memory: 1Gi
+
+rbac:
+  namespaced: true
+
+sidecar:
+  rules:
+    resource: configmap
+    folderAnnotation: loki-rule-folder
 
 # Only the monolithic process is needed for this single-node cluster.
 backend:
